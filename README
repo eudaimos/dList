@@ -1,1 +1,5 @@
 dList for digital List is an application suite used to create lists out of anything digital.
+
+dList is designed as a powerful mechanism for creating lists that utilize a common library across the execution stack and abstract the storage mechanism from the user.
+
+dList is designed to be used by any layman and programmable by anyone capable of utilizing JavaScript.
