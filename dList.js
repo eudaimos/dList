@@ -13,7 +13,7 @@
 
     function dL_newid() { return (++_curclid) + "_"; };
 
-    var _global_items_clid = {}, _global_items_name = {};
+    var _global_items_clid = {}, _global_items_name = {}, _global_lists_clid = {}, _global_lists_name = {};
 
     function dL_item_proto(item) {
         item.prototype.addTo = function (list, values) {
@@ -183,6 +183,14 @@
         return list;
     };
 
+    function dL_add_global_list(list) {
+        _global_lists_clid[list.id] = list;
+        if (_global_lists_name[list.name])
+            _global_lists_name[list.name][list.id] = list;
+        else
+            _global_lists_name[list.name] = ({}[list.id] = list);
+    }
+
     dList.list = function (name, attrs, allowAttrAdd) {
         var list = dList.isItem(name) ? name : dList.item(name);
         list._attrs_ = [];
@@ -206,6 +214,8 @@
         };
         list._items_ = [];
         list._item_ids_ = {};
+        _global_lists_clid[list.id] = list;
+        
         return dL_list_proto(list);
     };
 })();
