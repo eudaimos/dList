@@ -11,7 +11,7 @@
 
     var _curclid = 0;
 
-    function dL_newid() { return (++_curclid) + "_"; };
+    function dL_newid() { return (++_curclid) + "_" ; };
 
     var _global_items_clid = {}, _global_items_name = {}, _global_lists_clid = {}, _global_lists_name = {}, _global_lists_ = [];
 
