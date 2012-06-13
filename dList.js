@@ -11,7 +11,7 @@
 
     var _curclid = 0;
 
-    function dL_newid() { return (++_curclid) + "_" ; };
+    function dL_newid() { return (++_curclid) + "_"; };
 
     var _global_items_clid = {}, _global_items_name = {}, _global_lists_clid = {}, _global_lists_name = {}, _global_lists_ = [];
 
@@ -198,12 +198,13 @@
     function dL_list_proto(list) {
         if (dList.isList(list)) {
             // add list prototype functions
+	    // Get the attribute of a list, usually by name, but a reference of the same attr is possible, too
             list.prototype.attr = function (name) {
                 var q;
                 // The thought here was that built-in attr types via dList.attrs.type would be functions, but instead
                 // they have been implemented as objects returned by function calls to get the type
                 // TODO: go back and implement as functions, I think it is somewhat cleaner in the long run
-                if (name === "function") {
+                if (typeof name === "function") {
                     // determine if it is a dList._attr_type 
                     if (name._attr_type)
                         q = function (a) { return a._attr_type === name._attr_type; };
@@ -212,13 +213,14 @@
                         q = name;
                 }
                 else
-                    q = function (a) { a.name == name; };
+                    q = function (a) { a.name === name; };
                 var results = [];
                 list._attrs_.forEach(function (a) { if (q(a)) results.push(a); });
+		var res = list._attrs_.filter(function (a) { return q(a); });
                 return results;
             };
             // attr can be a string := name of the attr OR an attr definition which can be decorated with additional validator & default values but not modify type
-            // type can be a dList.attrs.type definition function or a string from which to retrieve a dList.attrs.type definition
+            // type can be a dList.attrs.{type} definition function or a string from which to retrieve a dList.attrs.type definition
             // validator can only be a function used for additional validation of attribute values beyond the type validation
             // def is default value as a literal or function provided for attributes when a value is not explicitly assigned
             // - attrs w/o default values will not be set when items are added that do not provide a value for the attr
@@ -382,41 +384,59 @@
     // Provides access to the Attribute Typing system used by dList
     dList.attrs = {};
     // TODO: Add qualifier/validator
+	// type([type,] default)
     dList.attrs.type = function (t, def) {
-        if (arguments.length < 2)
-            def = t, t = "text";
-        switch (t) {
-            case "text": return dList.attrs.text(def);
-            case "int": return dList.attrs.int(def);
-            case "number": return dList.attrs.number(def);
-            case "rank": return dList.attrs.rank(def);
-            case "percent": return dList.attrs.percent(def);
-            case "date": return dList.attrs.date(def);
-            case "time": return dList.attrs.time(def);
-            case "duration": return dList.attrs.duration(def);
-            case "location": return dList.attrs.location(def);
-            case "phone": return dList.attrs.phone(def);
-            case "email": return dList.attrs.email(def);
-            case "file": return dList.attrs.file(def);
-            case "url": return dList.attrs.url(def);
-            case "image": return dList.attrs.image(def);
-            case "video": return dList.attrs.video(def);
-            default: return dList.attrs.text(def);
-        };
+	var _self = this;
+
+	_self.is = function(attrT) {
+	    if (typeof attrT === "string")
+		attrT = 
+	}
+
+        function get(t, def) {
+	    if (arguments.length < 2) {
+		def = t, t = "text";
+		if (dList_validate_numeric(def))
+		    t =  "number";
+	    }
+            switch (t) {
+	        case "text": return dList.attrs.text(def);
+                case "int": return dList.attrs.int(def);
+                case "number": return dList.attrs.number(def);
+                case "rank": return dList.attrs.rank(def);
+                case "percent": return dList.attrs.percent(def);
+                case "date": return dList.attrs.date(def);
+                case "time": return dList.attrs.time(def);
+                case "duration": return dList.attrs.duration(def);
+                case "location": return dList.attrs.location(def);
+                case "phone": return dList.attrs.phone(def);
+                case "email": return dList.attrs.email(def);
+                case "file": return dList.attrs.file(def);
+                case "url": return dList.attrs.url(def);
+                case "image": return dList.attrs.image(def);
+                case "video": return dList.attrs.video(def);
+	        case "app": return dList.attrs.app(def);
+                default: return dList.attrs.text(def);
+            };
+	}
+	
+	if (arguments.length)
+	    return get(arguments[0], arguments[1]);
+	return _self;
     };
 
     // types provide: validator, tostring, val holder, 
 
     dList.attrs.text = function (def) {
-        return { n: "text", validate: function (v) { return true; }, set: function (v) { return (v || def) || ""; } };
+        return function (what) { n: "text", validate: function (v, l) { return true; }, set: function (v) { return (v || def) || ""; } };
     };
 
     dList.attrs.int = function (def) {
-        return { n: "int", validate: function (v) { return dList_validate_integer(v); }, set: function (v) { return (+v || def) || 0; } };
+        return function (what) { n: "int", validate: function (v, l) { return dList_validate_integer(v); }, set: function (v) { return (+v || def) || 0; } };
     };
 
     dList.attrs.number = function (def) {
-        return { n: "number", validate: function (v) { return dList_validate_numeric(v); }, set: function (v) { return (+v || def) || 0; } };
+        return function (what) { n: "number", validate: function (v, l) { return dList_validate_numeric(v); }, set: function (v) { return (+v || def) || 0; } };
     };
 
     function dList_validate_numeric(v, adcheck) {
@@ -437,7 +457,7 @@
     }
 
     dList.attrs.flag = function (def) {
-        return { n: "flag", validate: function (v) { return dList_validate_flag(v); }, set: function (v) { return dList_valuate_flag(v); } };
+        return function (what) { n: "flag", validate: function (v) { return dList_validate_flag(v); }, set: function (v) { return dList_valuate_flag(v); } };
     };
 
     function dList_validate_flag(v, adcheck) {
@@ -445,7 +465,7 @@
     }
 
     function dList_valuate_flag(v) {
-        var isflagged = ["true", "yes", "ok", "check"];
+        var isflagged = ["true", "yes", "ok", "check", "checked"];
         var notflagged = ["false", "no", ""];
         var f = Boolean(v);
         switch (typeof v) {
@@ -459,11 +479,11 @@
     }
 
     dList.attrs.rank = function (def) {
-        return { n: "rank", validate: function (v) { return dList_validate_int(v, function (i) { return i >= 0; }); }, set: function (v) { return this.validate(v) ? v : def || 0; } };
+        return function (what) { n: "rank", validate: function (v) { return dList_validate_int(v, function (i) { return i >= 0; }); }, set: function (v) { return this.validate(v) ? v : def || 0; } };
     };
 
     dList.attrs.percent = function (def) {
-        return { n: "percent", validate: function (v) { return dList_validate_numeric(v, function (n) { return (n >= 0) && (n <= 1); }); }, set: function (v) { return this.validate(v) ? v : def || 0; } };
+        return function (what) { n: "percent", validate: function (v) { return dList_validate_numeric(v, function (n) { return (n >= 0) && (n <= 1); }); }, set: function (v) { return this.validate(v) ? v : def || 0; } };
     };
 
     dList.attrs.date = function (def) {
@@ -505,6 +525,10 @@
     dList.attrs.video = function (def) {
         throw "Not implemented yet.";
     };
+
+		dList.attrs.app = function (def) {
+		    throw "Not implemented yet.";
+		};
 
     // Attribute value is derived from the values of one or more attributes on the same item in this list
     // OR pulled from attribute values of this item from other lists
